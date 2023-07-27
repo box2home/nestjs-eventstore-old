@@ -46,7 +46,7 @@ export class EventStoreBus {
     private subject$: Subject<IEvent>,
     config: EventStoreBusConfig,
   ) {
-    this.addEventHandlers(config.events);
+    this.addEventHandlers(config.eventInstantiators);
 
     const catchupSubscriptions = config.subscriptions.filter((sub) => {
       return sub.type === EventStoreSubscriptionType.CatchUp;
