@@ -19,8 +19,9 @@ import {
 } from './event-bus.provider';
 
 export interface IEventConstructors {
-  [key: string]: Constructor<IEvent>;
+  [key: string]: (...args: any[]) => IEvent;
 }
+
 
 interface ExtendedCatchUpSubscription extends EventStoreCatchUpSubscription {
   isLive: boolean | undefined;

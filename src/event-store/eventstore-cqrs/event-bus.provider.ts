@@ -45,7 +45,7 @@ export type EventStoreSubscription =
 
 export type EventStoreBusConfig = {
   subscriptions: EventStoreSubscription[];
-  events: IEventConstructors;
+  eventInstantiators: IEventConstructors;
 };
 
 export type EventHandlerType = Type<IEventHandler<IEvent>>;
