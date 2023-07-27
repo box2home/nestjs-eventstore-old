@@ -31,9 +31,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/daypaio/nestjs-eventstore"
+    "url": "https://github.com/box2home/nestjs-eventstore-old"
   },
-  "bugs": "https://github.com/daypaio/nestjs-eventstore/issues",
+  "bugs": "https://github.com/box2home/nestjs-eventstore-old/issues",
   "peerDependencies": {
     "rxjs": "^6.3.3"
   },
