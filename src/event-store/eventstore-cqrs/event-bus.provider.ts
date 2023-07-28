@@ -1,166 +1,52 @@
-import { Injectable, OnModuleDestroy, Type } from '@nestjs/common';
+import { OnModuleDestroy, Type } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
-import { Observable, Subscription } from 'rxjs';
-import { filter } from 'rxjs/operators';
-import { isFunction } from 'util';
-import {
-  IEventHandler,
-  IEvent,
-  ObservableBus,
-  CommandBus,
-  InvalidSagaException,
-  ISaga,
-} from '@nestjs/cqrs';
-import {
-  SAGA_METADATA,
-  EVENTS_HANDLER_METADATA,
-} from '@nestjs/cqrs/dist/decorators/constants';
+import { Observable } from 'rxjs';
+import { IEventHandler, IEvent, ObservableBus, CommandBus, ISaga } from '@nestjs/cqrs';
 import { EventStoreBus, IEventConstructors } from './event-store.bus';
 import { EventStore } from '../event-store.class';
-import { CqrsOptions } from '@nestjs/cqrs/dist/interfaces/cqrs-options.interface';
-
-export enum EventStoreSubscriptionType {
-  Persistent,
-  CatchUp,
+export declare enum EventStoreSubscriptionType {
+    Persistent = 0,
+    CatchUp = 1
 }
-
-export type EventStorePersistentSubscription = {
-  type: EventStoreSubscriptionType.Persistent;
-  stream: string;
-  persistentSubscriptionName: string;
+export declare type EventStorePersistentSubscription = {
+    type: EventStoreSubscriptionType.Persistent;
+    stream: string;
+    persistentSubscriptionName: string;
 };
-
-export type EventStoreCatchupSubscription = {
-  type: EventStoreSubscriptionType.CatchUp;
-  stream: string;
+export declare type EventStoreCatchupSubscription = {
+    type: EventStoreSubscriptionType.CatchUp;
+    stream: string;
 };
-
-export type EventStoreSubscriptionConfig = {
-  persistentSubscriptionName: string;
+export declare type EventStoreSubscriptionConfig = {
+    persistentSubscriptionName: string;
 };
-
-export type EventStoreSubscription =
-  | EventStorePersistentSubscription
-  | EventStoreCatchupSubscription;
-
-export type EventStoreBusConfig = {
-  subscriptions: EventStoreSubscription[];
-  eventInstantiators: IEventConstructors;
+export declare type EventStoreSubscription = EventStorePersistentSubscription | EventStoreCatchupSubscription;
+export declare type EventStoreBusConfig = {
+    subscriptions: EventStoreSubscription[];
+    eventInstantiators: IEventConstructors;
 };
-
-export type EventHandlerType = Type<IEventHandler<IEvent>>;
-
-@Injectable()
-export class EventBusProvider extends ObservableBus<IEvent>
-  implements OnModuleDestroy {
-  private _publisher: EventStoreBus;
-  private readonly subscriptions: Subscription[];
-  private readonly cqrsOptions: CqrsOptions;
-
-  constructor(
-    private readonly commandBus: CommandBus,
-    private readonly moduleRef: ModuleRef,
-    private readonly eventStore: EventStore,
-    private config: EventStoreBusConfig,
-  ) {
-    super();
-    this.subscriptions = [];
-    this.useDefaultPublisher();
-  }
-
-  get publisher(): EventStoreBus {
-    return this._publisher;
-  }
-
-  set publisher(_publisher: EventStoreBus) {
-    this._publisher = _publisher;
-  }
-
-  onModuleDestroy() {
-    this.subscriptions.forEach(subscription => subscription.unsubscribe());
-  }
-
-  publish<T extends IEvent>(event: T, stream: string) {
-    this._publisher.publish(event, stream);
-  }
-
-  publishAll(events: IEvent[]) {
-    (events || []).forEach(event => this._publisher.publish(event));
-  }
-
-  bind(handler: IEventHandler<IEvent>, name: string) {
-    const stream$ = name ? this.ofEventName(name) : this.subject$;
-    const subscription = stream$.subscribe(event => handler.handle(event));
-    this.subscriptions.push(subscription);
-  }
-
-  registerSagas(types: Type<any>[] = []) {
-    const sagas = types
-      .map((target) => {
-        const metadata = Reflect.getMetadata(SAGA_METADATA, target) || [];
-        const instance = this.moduleRef.get(target, { strict: false });
-        if (!instance) {
-          throw new InvalidSagaException();
-        }
-        return metadata.map((key: string) => instance[key]);
-      })
-      .reduce((a, b) => a.concat(b), []);
-
-    sagas.forEach(saga => this.registerSaga(saga));
-  }
-
-  register(handlers: EventHandlerType[] = []) {
-    handlers.forEach(handler => this.registerHandler(handler));
-  }
-
-  protected registerHandler(handler: EventHandlerType) {
-    const instance = this.moduleRef.get(handler, { strict: false });
-    if (!instance) {
-      return;
-    }
-    const eventsNames = this.reflectEventsNames(handler);
-    eventsNames.map(event =>
-      this.bind(instance as IEventHandler<IEvent>, event.name),
-    );
-  }
-
-  protected ofEventName(name: string) {
-    return this.subject$.pipe(
-      filter(event => this.getEventName(event) === name),
-    );
-  }
-
-  private getEventName(event): string {
-    const { constructor } = Object.getPrototypeOf(event);
-    return constructor.name as string;
-  }
-
-  protected registerSaga(saga: ISaga) {
-    if (!isFunction(saga)) {
-      throw new InvalidSagaException();
-    }
-    const stream$ = saga(this);
-    if (!(stream$ instanceof Observable)) {
-      throw new InvalidSagaException();
-    }
-
-    const subscription = stream$
-      .pipe(filter(e => !!e))
-      .subscribe(command => this.commandBus.execute(command));
-
-    this.subscriptions.push(subscription);
-  }
-
-  private reflectEventsNames(handler: EventHandlerType): FunctionConstructor[] {
-    return Reflect.getMetadata(EVENTS_HANDLER_METADATA, handler);
-  }
-
-  private useDefaultPublisher() {
-    const pubSub = new EventStoreBus(
-      this.eventStore,
-      this.subject$,
-      this.config,
-    );
-    this._publisher = pubSub;
-  }
+export declare type EventHandlerType = Type<IEventHandler<IEvent>>;
+export declare class EventBusProvider extends ObservableBus<IEvent> implements OnModuleDestroy {
+    private readonly commandBus;
+    private readonly moduleRef;
+    private readonly eventStore;
+    private config;
+    private _publisher;
+    private readonly subscriptions;
+    private readonly cqrsOptions;
+    constructor(commandBus: CommandBus, moduleRef: ModuleRef, eventStore: EventStore, config: EventStoreBusConfig);
+    get publisher(): EventStoreBus;
+    set publisher(_publisher: EventStoreBus);
+    onModuleDestroy(): void;
+    publish<T extends IEvent>(event: T, stream: string): void;
+    publishAll(events: IEvent[]): void;
+    bind(handler: IEventHandler<IEvent>, name: string): void;
+    registerSagas(types?: Type<any>[]): void;
+    register(handlers?: EventHandlerType[]): void;
+    protected registerHandler(handler: EventHandlerType): void;
+    protected ofEventName(name: string): Observable<IEvent>;
+    private getEventName;
+    protected registerSaga(saga: ISaga): void;
+    private reflectEventsNames;
+    private useDefaultPublisher;
 }
