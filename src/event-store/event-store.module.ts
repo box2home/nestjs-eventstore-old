@@ -1,7 +1,6 @@
 import { Global, Module, DynamicModule } from '@nestjs/common';
 import { EventStore } from './event-store.class';
 import { ConnectionSettings, TcpEndPoint } from 'node-eventstore-client';
-import {EventPublisherService} from "./event-publisher.service";
 
 export interface EventStoreModuleOptions {
   connectionSettings: ConnectionSettings;
@@ -26,7 +25,6 @@ export class EventStoreModule {
     return {
       module: EventStoreModule,
       providers: [
-        EventPublisherService,
         {
           provide: EventStore,
           useFactory: () => {
