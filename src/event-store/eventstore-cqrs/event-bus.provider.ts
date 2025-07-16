@@ -84,6 +84,10 @@ export class EventBusProvider extends ObservableBus<IEvent>
     this._publisher.publish(event, stream);
   }
 
+  publishWithMaxAge<T extends IEvent>(event: T, stream: string) {
+    this._publisher.publishWithMaxAge(event, stream);
+  }
+
   publishAll(events: IEvent[]) {
     (events || []).forEach(event => this._publisher.publish(event));
   }

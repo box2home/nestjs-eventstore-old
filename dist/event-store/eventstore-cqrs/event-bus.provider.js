@@ -45,6 +45,9 @@ let EventBusProvider = class EventBusProvider extends cqrs_1.ObservableBus {
     publish(event, stream) {
         this._publisher.publish(event, stream);
     }
+    publishWithMaxAge(event, stream) {
+        this._publisher.publishWithMaxAge(event, stream);
+    }
     publishAll(events) {
         (events || []).forEach(event => this._publisher.publish(event));
     }

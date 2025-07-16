@@ -39,6 +39,7 @@ export declare class EventBusProvider extends ObservableBus<IEvent> implements O
     set publisher(_publisher: EventStoreBus);
     onModuleDestroy(): void;
     publish<T extends IEvent>(event: T, stream: string): void;
+    publishWithMaxAge<T extends IEvent>(event: T, stream: string): void;
     publishAll(events: IEvent[]): void;
     bind(handler: IEventHandler<IEvent>, name: string): void;
     registerSagas(types?: Type<any>[]): void;

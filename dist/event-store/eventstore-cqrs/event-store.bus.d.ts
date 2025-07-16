@@ -19,6 +19,7 @@ export declare class EventStoreBus {
     private logger;
     private catchupSubscriptions;
     private catchupSubscriptionsCount;
+    private readonly configuredStreams;
     private persistentSubscriptions;
     private persistentSubscriptionsCount;
     constructor(eventStore: EventStore, subject$: Subject<IEvent>, config: EventStoreBusConfig);
@@ -28,6 +29,7 @@ export declare class EventStoreBus {
     get allPersistentSubscriptionsLive(): boolean;
     get isLive(): boolean;
     publish(event: IEvent, stream?: string): Promise<void>;
+    publishWithMaxAge(event: any, streamName: string, maxAgeSeconds?: number): Promise<void>;
     publishAll(events: IEvent[], stream?: string): Promise<void>;
     subscribeToCatchupSubscription(stream: string): ExtendedCatchUpSubscription;
     subscribeToPersistentSubscription(stream: string, subscriptionName: string): Promise<ExtendedPersistentSubscription>;

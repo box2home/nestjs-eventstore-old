@@ -35,7 +35,7 @@ export class EventStoreBus {
   private logger = new Logger('EventStoreBus');
   private catchupSubscriptions: ExtendedCatchUpSubscription[] = [];
   private catchupSubscriptionsCount: number;
-
+  private readonly configuredStreams = new Set<string>();
   private persistentSubscriptions: ExtendedPersistentSubscription[] = [];
   private persistentSubscriptionsCount: number;
 
@@ -126,6 +126,29 @@ export class EventStoreBus {
       this.logger.error(err.message, err.stack);
     }
   }
+
+    async publishWithMaxAge(event: any, streamName: string, maxAgeSeconds = 60) {
+      const payload: EventData = createEventData(
+          v4(),
+          event.constructor.name,
+          true,
+          Buffer.from(JSON.stringify(event)),
+      );
+
+      const conn = this.eventStore.getConnection(); // ✅ utiliser getConnection()
+
+      await conn.appendToStream(streamName, -1, [payload]);
+
+      if (!this.configuredStreams.has(streamName)) {
+        const metadata = Buffer.from(JSON.stringify({ $maxAge: maxAgeSeconds }), 'utf8');
+        await conn.setStreamMetadataRaw(streamName, -2, metadata);
+        this.configuredStreams.add(streamName);
+        this.logger.log(`Configured stream ${streamName} with $maxAge = ${maxAgeSeconds}`);
+      }
+    }
+
+
+
 
   async publishAll(events: IEvent[], stream?: string) {
     try {

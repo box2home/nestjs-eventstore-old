@@ -19,6 +19,7 @@ class EventStoreBus {
         this.subject$ = subject$;
         this.logger = new common_1.Logger('EventStoreBus');
         this.catchupSubscriptions = [];
+        this.configuredStreams = new Set();
         this.persistentSubscriptions = [];
         this.addEventHandlers(config.eventInstantiators);
         const catchupSubscriptions = config.subscriptions.filter((sub) => {
@@ -69,6 +70,19 @@ class EventStoreBus {
             }
             catch (err) {
                 this.logger.error(err.message, err.stack);
+            }
+        });
+    }
+    publishWithMaxAge(event, streamName, maxAgeSeconds = 60) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const payload = node_eventstore_client_1.createEventData(uuid_1.v4(), event.constructor.name, true, Buffer.from(JSON.stringify(event)));
+            const conn = this.eventStore.getConnection();
+            yield conn.appendToStream(streamName, -1, [payload]);
+            if (!this.configuredStreams.has(streamName)) {
+                const metadata = Buffer.from(JSON.stringify({ $maxAge: maxAgeSeconds }), 'utf8');
+                yield conn.setStreamMetadataRaw(streamName, -2, metadata);
+                this.configuredStreams.add(streamName);
+                this.logger.log(`Configured stream ${streamName} with $maxAge = ${maxAgeSeconds}`);
             }
         });
     }
